@@ -4,8 +4,6 @@ import re
 from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
-import psycopg2
-import psycopg2.extras
 import psycopg2.extensions
 from shutil import copyfile
 
@@ -131,6 +129,7 @@ def main():
             log_handler(record_type, reference, user, station, parent)
             directory = create_dir(parent, record_type, reference)
 
+            # Additional files/folders for parts
             if record_type == 'PRT':
 
                 eng_source = create_eng_sub_folders(parent, reference)
