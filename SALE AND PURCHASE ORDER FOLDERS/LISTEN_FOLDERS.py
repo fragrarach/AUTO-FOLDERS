@@ -116,6 +116,7 @@ def create_supplier_shortcut(parent, reference, directory):
     p.Save(directory + r'\SUPPLIER INFO.lnk', True)
 
 
+# TODO : Catch connection error during DB service downtime
 def main():
     parent = r'E:\DATA\Fortune\SIGMWIN.DTA\QuatroAir\Documents'
     while 1:
