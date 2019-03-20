@@ -19,6 +19,38 @@ def dev_check():
         return False
 
 
+# Initialize production DB connection, listen cursor and query cursor
+def sigm_conn():
+    global conn_sigm, sigm_query
+    if dev_check():
+        conn_sigm = psycopg2.connect("host='192.168.0.57' dbname='DEV' user='SIGM' port='5493'")
+    else:
+        conn_sigm = psycopg2.connect("host='192.168.0.250' dbname='QuatroAir' user='SIGM' port='5493'")
+    conn_sigm.set_client_encoding("latin1")
+    conn_sigm.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+
+    sigm_listen = conn_sigm.cursor()
+    sigm_listen.execute("LISTEN alert;")
+    sigm_query = conn_sigm.cursor()
+
+    return conn_sigm, sigm_query
+
+
+# Initialize log DB connection, listen cursor and query cursor
+def log_conn():
+    global conn_log, log_query
+    if dev_check():
+        conn_log = psycopg2.connect("host='192.168.0.57' dbname='LOG' user='SIGM' port='5493'")
+    else:
+        conn_log = psycopg2.connect("host='192.168.0.250' dbname='LOG' user='SIGM' port='5493'")
+    conn_log.set_client_encoding("latin1")
+    conn_log.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+
+    log_query = conn_log.cursor()
+
+    return conn_log, log_query
+
+
 # PostgreSQL DB connection configs
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -116,28 +148,41 @@ def create_supplier_shortcut(parent, reference, directory):
     p.Save(directory + r'\SUPPLIER INFO.lnk', True)
 
 
-# TODO : Catch connection error during DB service downtime
 def main():
+    global conn_sigm, sigm_query, conn_log, log_query
+    conn_sigm, sigm_query = sigm_conn()
+    conn_log, log_query = log_conn()
     parent = r'E:\DATA\Fortune\SIGMWIN.DTA\QuatroAir\Documents'
     while 1:
-        conn_sigm.poll()
-        conn_sigm.commit()
-        while conn_sigm.notifies:
-            notify = conn_sigm.notifies.pop()
-            raw_payload = notify.payload
+        try:
+            conn_sigm.poll()
+        except:
+            print('Database cannot be accessed, PostgreSQL service probably rebooting')
+            try:
+                conn_sigm.close()
+                conn_sigm, sigm_query = sigm_conn()
+                conn_log.close()
+                conn_log, log_query = log_conn()
+            except:
+                pass
+        else:
+            conn_sigm.commit()
+            while conn_sigm.notifies:
+                notify = conn_sigm.notifies.pop()
+                raw_payload = notify.payload
 
-            record_type, reference, user, station = payload_handler(raw_payload)
-            log_handler(record_type, reference, user, station, parent)
-            directory = create_dir(parent, record_type, reference)
+                record_type, reference, user, station = payload_handler(raw_payload)
+                log_handler(record_type, reference, user, station, parent)
+                directory = create_dir(parent, record_type, reference)
 
-            # Additional files/folders for parts
-            if record_type == 'PRT':
+                # Additional files/folders for parts
+                if record_type == 'PRT':
 
-                eng_source = create_eng_sub_folders(parent, reference)
-                copy_change_summary(parent, eng_source, reference)
-                create_old_shortcut(eng_source)
-                create_eng_shortcut(eng_source, directory)
-                create_supplier_shortcut(parent, reference, directory)
+                    eng_source = create_eng_sub_folders(parent, reference)
+                    copy_change_summary(parent, eng_source, reference)
+                    create_old_shortcut(eng_source)
+                    create_eng_shortcut(eng_source, directory)
+                    create_supplier_shortcut(parent, reference, directory)
 
 
 main()
