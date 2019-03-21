@@ -30,7 +30,7 @@ def sigm_conn():
     conn_sigm.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
     sigm_listen = conn_sigm.cursor()
-    sigm_listen.execute("LISTEN alert;")
+    sigm_listen.execute("LISTEN folders;")
     sigm_query = conn_sigm.cursor()
 
     return conn_sigm, sigm_query
