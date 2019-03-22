@@ -8,6 +8,11 @@ import psycopg2.extensions
 from shutil import copyfile
 
 
+# PostgreSQL DB connection configs
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
+
 # Check whether app should reference dev or prod server/db
 def dev_check():
     raw_filename = os.path.basename(__file__)
@@ -49,21 +54,6 @@ def log_conn():
     log_query = conn_log.cursor()
 
     return conn_log, log_query
-
-
-# PostgreSQL DB connection configs
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
-
-if dev_check():
-    conn_sigm = psycopg2.connect("host='192.168.0.57' dbname='DEV' user='SIGM' port='5493'")
-else:
-    conn_sigm = psycopg2.connect("host='192.168.0.250' dbname='QuatroAir' user='SIGM' port='5493'")
-curs_sigm = conn_sigm.cursor()
-conn_sigm.set_client_encoding("latin1")
-conn_sigm.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-
-curs_sigm.execute("LISTEN folders;")
 
 
 # Split payload string, return named variables
