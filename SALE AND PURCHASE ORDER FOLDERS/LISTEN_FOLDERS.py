@@ -1,59 +1,17 @@
 import os
 import datetime
 import re
+import psycopg2.extensions
+from sigm import sigm_conn, log_conn, add_sql_files
 from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
-import psycopg2.extensions
 from shutil import copyfile
 
 
 # PostgreSQL DB connection configs
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
-
-
-# Check whether app should reference dev or prod server/db
-def dev_check():
-    raw_filename = os.path.basename(__file__)
-    removed_extension = raw_filename.split('.')[0]
-    last_word = removed_extension.split('_')[-1]
-    if last_word == 'DEV':
-        return True
-    else:
-        return False
-
-
-# Initialize production DB connection, listen cursor and query cursor
-def sigm_conn():
-    global conn_sigm, sigm_query
-    if dev_check():
-        conn_sigm = psycopg2.connect("host='192.168.0.57' dbname='DEV' user='SIGM' port='5493'")
-    else:
-        conn_sigm = psycopg2.connect("host='192.168.0.250' dbname='QuatroAir' user='SIGM' port='5493'")
-    conn_sigm.set_client_encoding("latin1")
-    conn_sigm.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-
-    sigm_listen = conn_sigm.cursor()
-    sigm_listen.execute("LISTEN folders;")
-    sigm_query = conn_sigm.cursor()
-
-    return conn_sigm, sigm_query
-
-
-# Initialize log DB connection, listen cursor and query cursor
-def log_conn():
-    global conn_log, log_query
-    if dev_check():
-        conn_log = psycopg2.connect("host='192.168.0.57' dbname='LOG' user='SIGM' port='5493'")
-    else:
-        conn_log = psycopg2.connect("host='192.168.0.250' dbname='LOG' user='SIGM' port='5493'")
-    conn_log.set_client_encoding("latin1")
-    conn_log.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-
-    log_query = conn_log.cursor()
-
-    return conn_log, log_query
 
 
 # Split payload string, return named variables
@@ -139,9 +97,13 @@ def create_supplier_shortcut(parent, reference, directory):
 
 
 def main():
+    channel = 'folders'
     global conn_sigm, sigm_query, conn_log, log_query
-    conn_sigm, sigm_query = sigm_conn()
+    conn_sigm, sigm_query = sigm_conn(channel)
     conn_log, log_query = log_conn()
+
+    add_sql_files()
+
     parent = r'E:\DATA\Fortune\SIGMWIN.DTA\QuatroAir\Documents'
     while 1:
         try:
