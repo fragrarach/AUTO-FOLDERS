@@ -2,7 +2,7 @@ import os
 import datetime
 import re
 import psycopg2.extensions
-from sigm import sigm_conn, log_conn, add_sql_files
+from sigm import sigm_conn, log_conn, add_sql_files, dev_check
 from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
@@ -25,26 +25,14 @@ def payload_handler(payload):
     return record_type, reference, user, station
 
 
-# Log file creation
-def log_handler(record_type, reference, user, station, parent):
-    timestamp = datetime.datetime.now()
-    log_message = \
-        f'Folder created for {record_type} {reference} by {user} on workstation {station} at {timestamp}\n'
-    print(log_message)
-
-    # TODO : Convert from log file to table on LOG DB
-    log = open(
-        f"{parent}\REFERENCE FILES\AUTOMATED FILE MANAGEMENT\SALE AND PURCHASE ORDER FOLDERS\log.txt",
-        "a")
-    log.write(log_message)
-    log.close()
-
-
 # Generate top level reference folder
 def create_dir(parent, record_type, reference):
     directory = f'{parent}\\{record_type}\\{reference}'
     if not os.path.exists(directory):
         os.makedirs(directory)
+        print(f'Created directory : {directory}')
+    else:
+        print(f'Directory already exists : {directory}')
     return directory
 
 
@@ -104,7 +92,11 @@ def main():
 
     add_sql_files()
 
-    parent = r'E:\DATA\Fortune\SIGMWIN.DTA\QuatroAir\Documents'
+    if dev_check():
+        parent = r'Z:\SIGMWIN.DTA\DEV\Documents'
+    else:
+        parent = r'E:\DATA\Fortune\SIGMWIN.DTA\QuatroAir\Documents'
+
     while 1:
         try:
             conn_sigm.poll()
@@ -124,7 +116,6 @@ def main():
                 raw_payload = notify.payload
 
                 record_type, reference, user, station = payload_handler(raw_payload)
-                log_handler(record_type, reference, user, station, parent)
                 directory = create_dir(parent, record_type, reference)
 
                 # Additional files/folders for parts
