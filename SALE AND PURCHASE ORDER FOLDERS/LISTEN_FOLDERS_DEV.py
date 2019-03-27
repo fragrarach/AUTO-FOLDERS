@@ -1,8 +1,7 @@
 import os
-import datetime
 import re
 import psycopg2.extensions
-from sigm import sigm_conn, log_conn, add_sql_files, dev_check
+from sigm import sigm_conn, log_conn, add_sql_files, dev_check, production_query, tabular_data
 from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
@@ -12,6 +11,14 @@ from shutil import copyfile
 # PostgreSQL DB connection configs
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
+
+# Pull 'cli_id' record from 'order_header' table based on 'ord_no' record
+def all_ord_nos():
+    sql_exp = f'SELECT ord_no FROM order_header'
+    result_set = production_query(sql_exp)
+    ord_nos = tabular_data(result_set)
+    return ord_nos
 
 
 # Split payload string, return named variables
@@ -84,6 +91,15 @@ def create_supplier_shortcut(parent, reference, directory):
     p.Save(directory + r'\SUPPLIER INFO.lnk', True)
 
 
+def init_ord_directories(parent):
+    record_type = 'ORD'
+    ord_nos = all_ord_nos()
+    for ord_no in ord_nos:
+        reference = ord_no[0]
+        create_dir(parent, record_type, reference)
+    pass
+
+
 def main():
     channel = 'folders'
     global conn_sigm, sigm_query, conn_log, log_query
@@ -96,6 +112,8 @@ def main():
         parent = r'Z:\SIGMWIN.DTA\DEV\Documents'
     else:
         parent = r'E:\DATA\Fortune\SIGMWIN.DTA\QuatroAir\Documents'
+
+    init_ord_directories(parent)
 
     while 1:
         try:
