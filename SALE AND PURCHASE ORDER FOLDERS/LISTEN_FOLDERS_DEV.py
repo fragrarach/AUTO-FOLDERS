@@ -1,7 +1,5 @@
-import os
 import re
-import psycopg2.extensions
-from sigm import sigm_conn, log_conn, add_sql_files, dev_check, production_query, tabular_data
+from sigm import *
 from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
@@ -16,7 +14,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 # Pull 'cli_id' record from 'order_header' table based on 'ord_no' record
 def all_ord_nos():
     sql_exp = f'SELECT ord_no FROM order_header'
-    result_set = production_query(sql_exp)
+    result_set = sigm_db_query(sql_exp)
     ord_nos = tabular_data(result_set)
     return ord_nos
 
@@ -97,14 +95,13 @@ def init_ord_directories(parent):
     for ord_no in ord_nos:
         reference = ord_no[0]
         create_dir(parent, record_type, reference)
-    pass
 
 
 def main():
     channel = 'folders'
-    global conn_sigm, sigm_query, conn_log, log_query
-    conn_sigm, sigm_query = sigm_conn(channel)
-    conn_log, log_query = log_conn()
+    global sigm_connection, sigm_db_cursor, log_connection, log_db_cursor
+    sigm_connection, sigm_db_cursor = sigm_connect(channel)
+    log_connection, log_db_cursor = log_connect()
 
     add_sql_files()
 
@@ -117,20 +114,20 @@ def main():
 
     while 1:
         try:
-            conn_sigm.poll()
+            sigm_connection.poll()
         except:
             print('Database cannot be accessed, PostgreSQL service probably rebooting')
             try:
-                conn_sigm.close()
-                conn_sigm, sigm_query = sigm_conn(channel)
-                conn_log.close()
-                conn_log, log_query = log_conn()
+                sigm_connection.close()
+                sigm_connection, sigm_db_cursor = sigm_connect(channel)
+                log_connection.close()
+                log_connection, log_db_cursor = log_connect()
             except:
                 pass
         else:
-            conn_sigm.commit()
-            while conn_sigm.notifies:
-                notify = conn_sigm.notifies.pop()
+            sigm_connection.commit()
+            while sigm_connection.notifies:
+                notify = sigm_connection.notifies.pop()
                 raw_payload = notify.payload
 
                 record_type, reference, user, station = payload_handler(raw_payload)
