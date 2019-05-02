@@ -1,1 +1,0 @@
-"C:\Program Files (x86)\Python36\python.exe" "%~dp0\%~n0.py"
