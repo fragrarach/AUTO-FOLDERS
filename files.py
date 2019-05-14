@@ -1,4 +1,5 @@
 import os
+import re
 from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
@@ -8,8 +9,8 @@ from sql import all_ord_nos
 
 
 # Generate top level reference folder
-def create_dir(parent, record_type, reference):
-    directory = f'{parent}\\{record_type}\\{reference}'
+def create_dir(record_type, reference):
+    directory = f'{Config.DOC_DIR}\\{record_type}\\{reference}'
     if not os.path.exists(directory):
         os.makedirs(directory)
         print(f'Created directory : {directory}')
@@ -18,38 +19,38 @@ def create_dir(parent, record_type, reference):
     return directory
 
 
-def extend_dir(reference, directory):
-    eng_source = create_eng_sub_folders(Config.DOC_DIR, reference)
-    copy_change_summary(Config.DOC_DIR, eng_source, reference)
-    create_old_shortcut(eng_source)
-    create_eng_shortcut(eng_source, directory)
-    create_supplier_shortcut(Config.DOC_DIR, reference, directory)
+def extend_dir(prt_no, prt_folder):
+    eng_folder = create_eng_sub_folders(prt_no)
+    copy_change_summary(eng_folder, prt_no)
+    create_old_shortcut(eng_folder)
+    create_eng_shortcut(eng_folder, prt_folder)
+    create_supplier_shortcut(prt_no, prt_folder)
 
 
 # Generate engineering source folder and current, future and old sub folders
-def create_eng_sub_folders(parent, reference):
-    eng_source = f'{parent}\\SOURCE FILES\\ENGINEERING\\{reference}'
+def create_eng_sub_folders(prt_no):
+    eng_folder = f'{Config.ENG_DIR}\\{prt_no}'
     eng_sub_folders = ['Current', 'Future', 'Old']
-    if not os.path.exists(eng_source):
-        os.makedirs(eng_source)
+    if not os.path.exists(eng_folder):
+        os.makedirs(eng_folder)
     for sub_folder in eng_sub_folders:
-        sub_folder_path = F'{eng_source}\\{sub_folder}'
+        sub_folder_path = F'{eng_folder}\\{sub_folder}'
         if not os.path.exists(sub_folder_path):
             os.makedirs(sub_folder_path)
-    return eng_source
+    return eng_folder
 
 
 # Create a copy of the change summary excel file from the template
-def copy_change_summary(parent, eng_source, reference):
-    template_file = f'{parent}\\SOURCE FILES\\TEMPLATES\\CHANGE SUMMARY.xlsm'
-    template_dest = f'{eng_source}\\Current\\{reference} CHANGE SUMMARY.xlsm'
+def copy_change_summary(eng_folder, prt_no):
+    template_file = f'{Config.SOURCE_DIR}\\TEMPLATES\\CHANGE SUMMARY.xlsm'
+    template_dest = f'{eng_folder}\\Current\\{prt_no} CHANGE SUMMARY.xlsm'
     copyfile(template_file, template_dest)
 
 
 # Create internal shortcut from 'current' sub folder to 'old' sub folder
-def create_old_shortcut(eng_source):
-    source = f'{eng_source}\\Old'
-    eng_dest = f'{eng_source}\\Current\\Old.lnk'
+def create_old_shortcut(eng_folder):
+    source = f'{eng_folder}\\Old'
+    eng_dest = f'{eng_folder}\\Current\\Old.lnk'
     s = CreateObject(ShellLink)
     s.SetPath(source)
     p = s.QueryInterface(IPersistFile)
@@ -57,21 +58,21 @@ def create_old_shortcut(eng_source):
 
 
 # Create shortcut from reference folder to source folder
-def create_eng_shortcut(eng_source, directory):
+def create_eng_shortcut(eng_folder, prt_folder):
     s = CreateObject(ShellLink)
-    s.SetPath(eng_source)
+    s.SetPath(eng_folder)
     p = s.QueryInterface(IPersistFile)
-    p.Save(directory + r'\ENGINEERING.lnk', True)
+    p.Save(prt_folder + r'\ENGINEERING.lnk', True)
 
 
-def create_supplier_shortcut(parent, reference, directory):
-    sup_source = f'{parent}\\SOURCE FILES\\SUPPLIER INFO\\{reference}'
+def create_supplier_shortcut(prt_no, prt_folder):
+    sup_source = f'{Config.SUP_DIR}\\{prt_no}'
     if not os.path.exists(sup_source):
         os.makedirs(sup_source)
     s = CreateObject(ShellLink)
     s.SetPath(sup_source)
     p = s.QueryInterface(IPersistFile)
-    p.Save(directory + r'\SUPPLIER INFO.lnk', True)
+    p.Save(prt_folder + r'\SUPPLIER INFO.lnk', True)
 
 
 def init_ord_directories():
@@ -79,4 +80,85 @@ def init_ord_directories():
     ord_nos = all_ord_nos()
     for ord_no in ord_nos:
         reference = ord_no[0]
-        create_dir(Config.DOC_DIR, record_type, reference)
+        create_dir(record_type, reference)
+    print('Order directory init complete.\n')
+
+
+def rename_prt_no(old_prt_no, new_prt_no):
+    part_folder = Config.DOC_DIR + f'\\PRT\\{old_prt_no}'
+    eng_folder = Config.ENG_DIR + f'\\{old_prt_no}'
+    sup_folder = Config.SUP_DIR + f'\\{old_prt_no}'
+    acc_folder = Config.ACC_DIR + f'\\{old_prt_no}'
+    pics_folder = Config.PICS_DIR + f'\\{old_prt_no}'
+
+    print(f'Renaming folders for part renaming from {old_prt_no} to {new_prt_no}')
+
+    if os.path.exists(eng_folder):
+        new_eng_folder = Config.ENG_DIR + f'\\{new_prt_no}'
+        os.rename(eng_folder, new_eng_folder)
+        print(f'Engineering folder renamed from {eng_folder} to {new_eng_folder}')
+
+    if os.path.exists(sup_folder):
+        new_sup_folder = Config.SUP_DIR + f'\\{new_prt_no}'
+        os.rename(sup_folder, new_sup_folder)
+        print(f'Engineering folder renamed from {sup_folder} to {new_sup_folder}')
+
+    if os.path.exists(part_folder):
+        new_part_folder = Config.DOC_DIR + f'\\PRT\\{new_prt_no}'
+        os.rename(part_folder, new_part_folder)
+        print(f'Part folder renamed from {part_folder} to {new_part_folder}')
+
+        eng_shortcut = new_part_folder + r'\ENGINEERING.lnk'
+        new_eng_folder = Config.ENG_DIR + f'\\{new_prt_no}'
+        if os.path.exists(eng_shortcut):
+            os.remove(eng_shortcut)
+            create_eng_shortcut(new_eng_folder, new_part_folder)
+            print(f'Generated shortcut to engineering folder in part folder')
+
+        sup_shortcut = new_part_folder + r'\SUPPLIER INFO.lnk'
+        if os.path.exists(sup_shortcut):
+            os.remove(sup_shortcut)
+            create_supplier_shortcut(new_prt_no, new_part_folder)
+            print(f'Generated shortcut to supplier folder in part folder')
+
+    if os.path.exists(acc_folder):
+        new_acc_folder = Config.ACC_DIR + f'\\{new_prt_no}'
+        os.rename(acc_folder, new_acc_folder)
+        print(f'Accessory folder renamed from {acc_folder} to {new_acc_folder}')
+
+    if os.path.exists(pics_folder):
+        new_pics_folder = Config.PICS_DIR + f'\\{new_prt_no}'
+        os.rename(pics_folder, new_pics_folder)
+        print(f'Pictures folder renamed from {pics_folder} to {new_pics_folder}')
+
+    if os.path.exists(Config.UNIT_DIR):
+        for folder in os.listdir(Config.UNIT_DIR):
+            unit_list = Config.UNIT_DIR + f'\\{folder}\\List.txt'
+            if os.path.exists(unit_list):
+                if old_prt_no in open(unit_list).read():
+                    with open(unit_list, "r") as file:
+                        file_data = file.readlines()
+
+                    for index, line in enumerate(file_data):
+                        file_data[index] = re.sub(rf'^{old_prt_no}$', new_prt_no, line)
+
+                    with open(unit_list, "w") as file:
+                        file.writelines(file_data)
+                    print(f'Renamed part number in worksheet {folder} unit list')
+
+    if os.path.exists(Config.MANUAL_DIR):
+        for folder in os.listdir(Config.MANUAL_DIR):
+            manual_list = Config.MANUAL_DIR + f'\\{folder}\\ACTIVE.txt'
+            if os.path.exists(manual_list):
+                if old_prt_no in open(manual_list).read():
+                    with open(manual_list, "r") as file:
+                        file_data = file.readlines()
+
+                    for index, line in enumerate(file_data):
+                        file_data[index] = re.sub(rf'^{old_prt_no}$', new_prt_no, line)
+
+                    with open(manual_list, "w") as file:
+                        file.writelines(file_data)
+                    print(f'Renamed part number in manual {folder} unit list')
+
+    print(f'Renaming complete for part renaming from {old_prt_no} to {new_prt_no}\n')
