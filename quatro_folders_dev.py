@@ -1,12 +1,14 @@
-from sigm import add_sql_files
-from files import init_ord_directories
-from listen import listen
+import quatro
+import config
+import files
+import tasks
 
 
 def main():
-    add_sql_files()
-    init_ord_directories()
-    listen()
+    folders_config = config.Config()
+    quatro.add_sql_files(folders_config)
+    files.init_ord_directories(folders_config)
+    quatro.listen(folders_config, tasks.listen_task)
 
 
 if __name__ == "__main__":
