@@ -1,5 +1,6 @@
 import data
 import files
+from quatro import log
 
 
 def listen_task(config, notify):
@@ -20,4 +21,4 @@ def listen_task(config, notify):
             new_prt_no = reference.split("}, {")[1][:-1]
             files.rename_prt_no(config, old_prt_no, new_prt_no)
     else:
-        print(f'{record_type} {reference} includes illegal character')
+        log(f'{record_type} {reference} includes illegal character')
