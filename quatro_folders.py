@@ -11,6 +11,7 @@ def main():
     folders_config = config.Config()
     quatro.add_sql_files(folders_config)
     files.init_ord_directories(folders_config)
+    files.init_cli_directories(folders_config)
     quatro.listen(folders_config, tasks.listen_task)
 
 

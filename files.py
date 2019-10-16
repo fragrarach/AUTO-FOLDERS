@@ -4,7 +4,7 @@ from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
 from shutil import copyfile
-from statements import all_ord_nos
+from statements import all_ord_nos, all_cli_nos
 from quatro import log
 
 
@@ -80,6 +80,15 @@ def init_ord_directories(config):
         reference = ord_no[0]
         create_dir(config, record_type, reference)
     log('Order directory init complete.')
+
+
+def init_cli_directories(config):
+    record_type = 'CLI'
+    cli_nos = all_cli_nos(config)
+    for cli_no in cli_nos:
+        reference = cli_no[0]
+        create_dir(config, record_type, reference)
+    log('Client directory init complete.')
 
 
 def rename_prt_no(config, old_prt_no, new_prt_no):
@@ -160,3 +169,16 @@ def rename_prt_no(config, old_prt_no, new_prt_no):
                     log(f'Renamed part number in manual {folder} unit list')
 
     log(f'Renaming complete for part renaming from {old_prt_no} to {new_prt_no}\n')
+
+
+def rename_cli_no(config, old_cli_no, new_cli_no):
+    client_folder = config.DOC_DIR + f'\\PRT\\{old_cli_no}'
+
+    log(f'Renaming folders for part renaming from {old_cli_no} to {new_cli_no}')
+
+    if os.path.exists(client_folder):
+        new_client_folder = config.DOC_DIR + f'\\PRT\\{new_cli_no}'
+        os.rename(client_folder, new_client_folder)
+        log(f'Part folder renamed from {client_folder} to {new_client_folder}')
+
+    log(f'Renaming complete for part renaming from {old_cli_no} to {new_cli_no}\n')
