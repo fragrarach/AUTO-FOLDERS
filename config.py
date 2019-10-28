@@ -21,7 +21,7 @@ class Config:
         self.UNIT_DIR = None
         self.MANUAL_DIR = None
 
-    def get_directories(self):
+    def set_directories(self):
         self.DOC_DIR = r'E:\DATA\Fortune\SIGMWIN.DTA\QuatroAir\Documents' if not dev_check() else r'Z:\SIGMWIN.DTA\DEV\Documents'
         self.SOURCE_DIR = self.DOC_DIR + f'\\SOURCE FILES'
         self.ENG_DIR = self.SOURCE_DIR + f'\\ENGINEERING'

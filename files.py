@@ -22,7 +22,7 @@ def extend_dir(prt_no, prt_folder):
     copy_change_summary(eng_folder, prt_no)
     create_old_shortcut(eng_folder)
     create_eng_shortcut(eng_folder, prt_folder)
-    create_supplier_shortcut(c.config, prt_no, prt_folder)
+    create_supplier_shortcut(prt_no, prt_folder)
 
 
 # Generate engineering source folder and current, future and old sub folders

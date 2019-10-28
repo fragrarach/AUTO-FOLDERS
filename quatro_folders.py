@@ -7,7 +7,7 @@ from quatro import init_app_log_dir, log
 
 def main():
     c.config = Config(__file__)
-    c.config.get_directories()
+    c.config.set_directories()
     init_app_log_dir()
     log(f'Starting {__file__}')
     c.config.sql_connections()
