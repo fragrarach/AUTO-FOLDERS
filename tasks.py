@@ -25,6 +25,10 @@ def listen_task(config, notify):
                 old_cli_no = reference.split("}, {")[0][1:]
                 new_cli_no = reference.split("}, {")[1][:-1]
                 files.rename_cli_no(old_cli_no, new_cli_no)
+            elif record_type == 'SUP RENAME':
+                old_sup_no = reference.split("}, {")[0][1:]
+                new_sup_no = reference.split("}, {")[1][:-1]
+                files.rename_sup_no(old_sup_no, new_sup_no)
         else:
             log(f'{record_type} {reference} includes illegal character')
     except:

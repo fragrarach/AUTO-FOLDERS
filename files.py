@@ -4,7 +4,7 @@ from comtypes.client import CreateObject
 from comtypes.persist import IPersistFile
 from comtypes.shelllink import ShellLink
 from shutil import copyfile
-from statements import all_ord_nos, all_cli_nos
+from statements import all_ord_nos, all_cli_nos, all_sup_nos
 from quatro import log, configuration as c
 
 
@@ -91,6 +91,15 @@ def init_cli_directories():
     log('Client directory init complete.')
 
 
+def init_sup_directories():
+    record_type = 'SUP'
+    sup_nos = all_sup_nos()
+    for sup_no in sup_nos:
+        reference = sup_no[0]
+        create_dir(record_type, reference)
+    log('Client directory init complete.')
+
+
 def rename_prt_no(old_prt_no, new_prt_no):
     part_folder = c.config.DOC_DIR + f'\\PRT\\{old_prt_no}'
     eng_folder = c.config.ENG_DIR + f'\\{old_prt_no}'
@@ -172,13 +181,26 @@ def rename_prt_no(old_prt_no, new_prt_no):
 
 
 def rename_cli_no(old_cli_no, new_cli_no):
-    client_folder = c.config.DOC_DIR + f'\\PRT\\{old_cli_no}'
+    client_folder = c.config.DOC_DIR + f'\\CLI\\{old_cli_no}'
 
     log(f'Renaming folders for part renaming from {old_cli_no} to {new_cli_no}')
 
     if os.path.exists(client_folder):
-        new_client_folder = c.config.DOC_DIR + f'\\PRT\\{new_cli_no}'
+        new_client_folder = c.config.DOC_DIR + f'\\CLI\\{new_cli_no}'
         os.rename(client_folder, new_client_folder)
         log(f'Part folder renamed from {client_folder} to {new_client_folder}')
 
     log(f'Renaming complete for part renaming from {old_cli_no} to {new_cli_no}\n')
+
+
+def rename_sup_no(old_sup_no, new_sup_no):
+    supplier_folder = c.config.DOC_DIR + f'\\SUP\\{old_sup_no}'
+
+    log(f'Renaming folders for part renaming from {old_sup_no} to {new_sup_no}')
+
+    if os.path.exists(supplier_folder):
+        new_supplier_folder = c.config.DOC_DIR + f'\\SUP\\{new_sup_no}'
+        os.rename(supplier_folder, new_supplier_folder)
+        log(f'Part folder renamed from {supplier_folder} to {new_supplier_folder}')
+
+    log(f'Renaming complete for part renaming from {old_sup_no} to {new_sup_no}\n')

@@ -14,3 +14,10 @@ def all_cli_nos():
     result_set = sql_query(sql_exp, c.config.sigm_db_cursor)
     cli_nos = tabular_data(result_set)
     return cli_nos
+
+
+def all_sup_nos():
+    sql_exp = f'SELECT sup_no FROM supplier'
+    result_set = sql_query(sql_exp, c.config.sigm_db_cursor)
+    sup_nos = tabular_data(result_set)
+    return sup_nos
